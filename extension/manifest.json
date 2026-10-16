@@ -4,8 +4,7 @@
   "version": "1.2.0",
   "description": "AI-powered URL security scanner with real-time heuristic analysis and threat intelligence.",
   "permissions": [
-    "activeTab",
-    "storage"
+    "activeTab"
   ],
   "host_permissions": [
     "https://safebrowse-api.onrender.com/*",

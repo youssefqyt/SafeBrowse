@@ -4,7 +4,7 @@
  * connection settings, and secure DOM rendering.
  */
 
-const DEFAULT_API_URL = "https://safebrowse-api.onrender.com";
+const API_URL = "https://safebrowse-api.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // DOM Elements
@@ -17,127 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const backendIndicator = document.getElementById("backend-indicator");
   const backendIndicatorText = document.getElementById("backend-indicator-text");
 
-  // Settings DOM
-  const toggleSettingsBtn = document.getElementById("toggle-settings-btn");
-  const closeSettingsBtn = document.getElementById("close-settings-btn");
-  const settingsPanel = document.getElementById("settings-panel");
-  const apiUrlInput = document.getElementById("api-url-input");
-  const testConnBtn = document.getElementById("test-connection-btn");
-  const saveSettingsBtn = document.getElementById("save-settings-btn");
-  const connStatusMsg = document.getElementById("connection-status-msg");
-
   let currentUrl = "";
   let currentHostname = "";
-  let configuredApiUrl = DEFAULT_API_URL;
-
-  // 1. Load Stored Configuration
-  try {
-    if (typeof chrome !== "undefined" && chrome.storage?.local) {
-      const stored = await chrome.storage.local.get(["safebrowse_api_url"]);
-      if (stored.safebrowse_api_url && !stored.safebrowse_api_url.includes("localhost:5000")) {
-        configuredApiUrl = stored.safebrowse_api_url.replace(/\/+$/, "");
-      } else {
-        configuredApiUrl = DEFAULT_API_URL;
-        await chrome.storage.local.set({ safebrowse_api_url: DEFAULT_API_URL });
-      }
-    } else {
-      const localStored = localStorage.getItem("safebrowse_api_url");
-      if (localStored && !localStored.includes("localhost:5000")) {
-        configuredApiUrl = localStored.replace(/\/+$/, "");
-      } else {
-        configuredApiUrl = DEFAULT_API_URL;
-        localStorage.setItem("safebrowse_api_url", DEFAULT_API_URL);
-      }
-    }
-  } catch (err) {
-    console.warn("Could not load stored API URL, using default:", err);
-  }
-
-  apiUrlInput.value = configuredApiUrl;
-
-  // 2. Settings Toggle & Save Handlers
-  const resetDefaultBtn = document.getElementById("reset-default-btn");
-  if (resetDefaultBtn) {
-    resetDefaultBtn.addEventListener("click", async () => {
-      apiUrlInput.value = DEFAULT_API_URL;
-      configuredApiUrl = DEFAULT_API_URL;
-      try {
-        if (typeof chrome !== "undefined" && chrome.storage?.local) {
-          await chrome.storage.local.set({ safebrowse_api_url: DEFAULT_API_URL });
-        } else {
-          localStorage.setItem("safebrowse_api_url", DEFAULT_API_URL);
-        }
-      } catch (e) {}
-      showSettingsNotice(`Restored cloud URL: ${DEFAULT_API_URL}`, "success");
-    });
-  }
-  toggleSettingsBtn.addEventListener("click", () => {
-    const isHidden = settingsPanel.classList.toggle("hidden");
-    settingsPanel.setAttribute("aria-expanded", String(!isHidden));
-  });
-
-  closeSettingsBtn.addEventListener("click", () => {
-    settingsPanel.classList.add("hidden");
-    settingsPanel.setAttribute("aria-expanded", "false");
-  });
-
-  saveSettingsBtn.addEventListener("click", async () => {
-    const newUrl = apiUrlInput.value.trim().replace(/\/+$/, "");
-    if (!newUrl) return;
-
-    configuredApiUrl = newUrl;
-    try {
-      if (typeof chrome !== "undefined" && chrome.storage?.local) {
-        await chrome.storage.local.set({ safebrowse_api_url: newUrl });
-      } else {
-        localStorage.setItem("safebrowse_api_url", newUrl);
-      }
-      showSettingsNotice("Settings saved successfully.", "success");
-      setTimeout(() => settingsPanel.classList.add("hidden"), 1200);
-    } catch (err) {
-      showSettingsNotice("Failed to save settings.", "error");
-    }
-  });
-
-  testConnBtn.addEventListener("click", async () => {
-    const testUrl = apiUrlInput.value.trim().replace(/\/+$/, "");
-    showSettingsNotice("Testing connection...", "info");
-
-    try {
-      const resp = await fetch(`${testUrl}/api/health`, {
-        signal: AbortSignal.timeout(6000)
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        showSettingsNotice(`Connected: ${data.service || "SafeBrowse API"} (v${data.version || "1.0"})`, "success");
-        setBackendStatus("online", "Connected to API");
-      } else {
-        showSettingsNotice(`Server returned HTTP ${resp.status}.`, "error");
-        setBackendStatus("offline", "Server Error");
-      }
-    } catch (err) {
-      showSettingsNotice("Cannot reach server. Check URL or verify backend is running.", "error");
-      setBackendStatus("offline", "Backend Unreachable");
-    }
-  });
-
-  function showSettingsNotice(msg, type) {
-    connStatusMsg.style.display = "block";
-    connStatusMsg.textContent = msg;
-    if (type === "success") {
-      connStatusMsg.style.background = "#ecfdf5";
-      connStatusMsg.style.color = "#047857";
-      connStatusMsg.style.border = "1px solid #a7f3d0";
-    } else if (type === "error") {
-      connStatusMsg.style.background = "#fef2f2";
-      connStatusMsg.style.color = "#b91c1c";
-      connStatusMsg.style.border = "1px solid #fecaca";
-    } else {
-      connStatusMsg.style.background = "#f1f5f9";
-      connStatusMsg.style.color = "#475569";
-      connStatusMsg.style.border = "1px solid #e2e8f0";
-    }
-  }
 
   function setBackendStatus(state, label) {
     const dot = backendIndicator.querySelector(".status-dot");
@@ -146,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (state === "error") dot.classList.add("error");
     backendIndicatorText.textContent = label;
   }
+
 
   // 3. Inspect Current Active Tab
   try {
@@ -226,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       // 4a. Attempt Cloud Backend Scan
-      const response = await fetch(`${configuredApiUrl}/api/scan`, {
+      const response = await fetch(`${API_URL}/api/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: currentUrl }),

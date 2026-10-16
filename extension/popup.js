@@ -4,7 +4,7 @@
  * connection settings, and secure DOM rendering.
  */
 
-const DEFAULT_API_URL = "http://localhost:5000";
+const DEFAULT_API_URL = "https://safebrowse-api.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // DOM Elements
@@ -34,12 +34,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     if (typeof chrome !== "undefined" && chrome.storage?.local) {
       const stored = await chrome.storage.local.get(["safebrowse_api_url"]);
-      if (stored.safebrowse_api_url) {
+      if (stored.safebrowse_api_url && !stored.safebrowse_api_url.includes("localhost:5000")) {
         configuredApiUrl = stored.safebrowse_api_url.replace(/\/+$/, "");
+      } else {
+        configuredApiUrl = DEFAULT_API_URL;
+        await chrome.storage.local.set({ safebrowse_api_url: DEFAULT_API_URL });
       }
     } else {
       const localStored = localStorage.getItem("safebrowse_api_url");
-      if (localStored) configuredApiUrl = localStored.replace(/\/+$/, "");
+      if (localStored && !localStored.includes("localhost:5000")) {
+        configuredApiUrl = localStored.replace(/\/+$/, "");
+      } else {
+        configuredApiUrl = DEFAULT_API_URL;
+        localStorage.setItem("safebrowse_api_url", DEFAULT_API_URL);
+      }
     }
   } catch (err) {
     console.warn("Could not load stored API URL, using default:", err);
@@ -48,6 +56,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   apiUrlInput.value = configuredApiUrl;
 
   // 2. Settings Toggle & Save Handlers
+  const resetDefaultBtn = document.getElementById("reset-default-btn");
+  if (resetDefaultBtn) {
+    resetDefaultBtn.addEventListener("click", async () => {
+      apiUrlInput.value = DEFAULT_API_URL;
+      configuredApiUrl = DEFAULT_API_URL;
+      try {
+        if (typeof chrome !== "undefined" && chrome.storage?.local) {
+          await chrome.storage.local.set({ safebrowse_api_url: DEFAULT_API_URL });
+        } else {
+          localStorage.setItem("safebrowse_api_url", DEFAULT_API_URL);
+        }
+      } catch (e) {}
+      showSettingsNotice(`Restored cloud URL: ${DEFAULT_API_URL}`, "success");
+    });
+  }
   toggleSettingsBtn.addEventListener("click", () => {
     const isHidden = settingsPanel.classList.toggle("hidden");
     settingsPanel.setAttribute("aria-expanded", String(!isHidden));

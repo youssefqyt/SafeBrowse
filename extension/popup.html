@@ -43,10 +43,11 @@
       </div>
       <div class="settings-body">
         <label for="api-url-input" class="input-label">Backend API Base URL</label>
-        <input type="text" id="api-url-input" class="text-input" placeholder="http://localhost:5000 or Render URL" spellcheck="false" />
+        <input type="text" id="api-url-input" class="text-input" placeholder="https://safebrowse-api.onrender.com" spellcheck="false" />
         <p class="settings-hint">Change this to your deployed Render HTTPS URL for live cloud scanning, or use localhost for development.</p>
         <div class="settings-button-row">
-          <button id="test-connection-btn" class="secondary-btn">Test Connection</button>
+          <button id="reset-default-btn" class="secondary-btn">Use Cloud Default</button>
+          <button id="test-connection-btn" class="secondary-btn">Test</button>
           <button id="save-settings-btn" class="primary-btn-sm">Save</button>
         </div>
         <div id="connection-status-msg" class="connection-status-msg"></div>
